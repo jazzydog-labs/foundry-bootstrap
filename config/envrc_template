@@ -1,0 +1,26 @@
+# .envrc template for foundry projects
+# Copy this to your project root and customize as needed
+
+# Load project-specific environment variables
+export PROJECT_ROOT=$(pwd)
+
+# Python virtual environment (if using poetry)
+# export POETRY_VENV_IN_PROJECT=1
+
+# Development settings
+export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
+export PYTHONDONTWRITEBYTECODE=1
+
+# Optional: Set specific Python version for this project
+# pyenv local 3.12.0
+
+# Optional: Load project-specific secrets
+# source_env_if_exists .env.local
+
+# Optional: Add project bin to PATH
+# PATH_add bin
+
+# Optional: Set up aliases
+# alias test="pytest"
+# alias lint="ruff check ."
+# alias format="black ." 

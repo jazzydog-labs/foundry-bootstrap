@@ -1,0 +1,33 @@
+# pipx packages to install
+# This file defines all Python CLI tools that should be installed via pipx
+
+packages:
+  # Code quality and formatting
+  - black
+  - mypy
+  - ruff
+  - isort
+  
+  # Development tools
+  - poetry
+  - cookiecutter
+  - pre-commit
+  
+  # Documentation
+  - mkdocs
+  - pdoc3
+  
+  # Testing
+  - pytest
+  - coverage
+  
+  # Utilities
+  - httpie
+  - yq
+  - jc
+  
+  # Optional tools
+  # - awscli
+  # - gcloud
+  # - kubectl
+  # - helm 
