@@ -1,4 +1,4 @@
 # Python dependencies for foundry-bootstrap orchestrator
-pyyaml>=6.0
+ruamel.yaml>=0.18.0
 click>=8.0
 rich>=13.0 

@@ -9,7 +9,7 @@ It reads YAML configs and installs tools via subprocess calls.
 import os
 import sys
 import subprocess
-import yaml
+from ruamel.yaml import YAML
 from pathlib import Path
 from typing import List, Dict, Any
 import click
@@ -32,8 +32,9 @@ class BootstrapOrchestrator:
             self.console.print(f"[red]Config file not found: {config_path}[/red]")
             return {}
         
+        yaml = YAML(typ='safe')
         with open(config_path, 'r') as f:
-            return yaml.safe_load(f)
+            return yaml.load(f)
     
     def run_command(self, cmd: List[str], description: str) -> bool:
         """Run a command and return success status."""

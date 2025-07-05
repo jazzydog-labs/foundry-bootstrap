@@ -44,7 +44,6 @@ if [[ -f "$REQUIREMENTS_FILE" ]]; then
     python3 -m pip install --user -r "$REQUIREMENTS_FILE"
 else
     echo "📦 Installing basic Python tools..."
-    python3 -m pip install --user pyyaml click rich
 fi
 
 echo "✅ Python orchestrator setup complete" 

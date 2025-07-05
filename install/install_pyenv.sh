@@ -27,7 +27,8 @@ if [[ -n "$SHELL_CONFIG" ]]; then
         echo "" >> "$SHELL_CONFIG"
         echo "# pyenv configuration" >> "$SHELL_CONFIG"
         echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$SHELL_CONFIG"
-        echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> "$SHELL_CONFIG"
+        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$SHELL_CONFIG"
+        echo 'eval "$(pyenv init --path)"' >> "$SHELL_CONFIG"
         echo 'eval "$(pyenv init -)"' >> "$SHELL_CONFIG"
         echo "📝 Added pyenv configuration to $SHELL_CONFIG"
     fi
