@@ -134,9 +134,12 @@ def main():
     console.print("[bold]Python Packages:[/bold]")
     python_results = []
     for package in python_packages:
+        # Use command mapping for Python packages too
+        actual_import_name, _ = get_command_and_version(package, overrides)
         try:
-            __import__(package)
-            console.print(f"[green]✅ {package}: Imported successfully[/green]")
+            __import__(actual_import_name)
+            display_name = f"{package} ({actual_import_name})" if actual_import_name != package else package
+            console.print(f"[green]✅ {display_name}: Imported successfully[/green]")
             python_results.append(True)
         except ImportError:
             console.print(f"[red]❌ {package}: Import failed[/red]")

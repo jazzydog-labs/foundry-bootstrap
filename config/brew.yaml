@@ -30,7 +30,7 @@ packages:
   # - docker-compose
   
   # Language runtimes (optional)
-  # - node
+  - node
   # - go
   # - rustup-init
   

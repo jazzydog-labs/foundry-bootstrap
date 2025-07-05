@@ -6,6 +6,7 @@
 command_mappings:
   ripgrep: rg
   neovim: nvim
+  python-Levenshtein: Levenshtein
 
 # Version flag overrides (command: version_flag)
 version_flags:

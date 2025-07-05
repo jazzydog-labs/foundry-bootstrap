@@ -1,0 +1,15 @@
+# npm global packages to install
+# This file defines all the Node.js CLI tools that should be installed globally via npm
+
+packages:
+  # Documentation and diagramming
+  - "@mermaid-js/mermaid-cli"
+  
+  # Development utilities
+  - npm-check-updates
+  - http-server
+  
+  # Optional tools
+  # - typescript
+  # - eslint
+  # - prettier 

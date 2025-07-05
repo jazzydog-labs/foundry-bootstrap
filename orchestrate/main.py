@@ -132,6 +132,48 @@ class BootstrapOrchestrator:
         
         return True
     
+    def install_npm_packages(self) -> bool:
+        """Install npm global packages from config."""
+        config = self.load_config('npm.yaml')
+        packages = config.get('packages', [])
+        
+        if not packages:
+            self.console.print("[yellow]No npm packages configured[/yellow]")
+            return True
+        
+        # Check if npm is available
+        if not self.check_command_exists('npm'):
+            self.console.print("[red]npm not found. Please install Node.js first.[/red]")
+            return False
+        
+        # Get list of already installed packages
+        try:
+            result = subprocess.run(['npm', 'list', '-g', '--depth=0'], capture_output=True, text=True, check=True)
+            installed = []
+            for line in result.stdout.split('\n'):
+                if line.strip() and not line.startswith('/') and not line.startswith('npm'):
+                    # Extract package name from npm list output
+                    parts = line.split()
+                    if parts:
+                        installed.append(parts[0])
+        except subprocess.CalledProcessError:
+            installed = []
+        
+        # Install missing packages
+        to_install = [pkg for pkg in packages if pkg not in installed]
+        
+        if not to_install:
+            self.console.print("[green]All npm packages already installed[/green]")
+            return True
+        
+        self.console.print(f"[blue]Installing {len(to_install)} npm packages...[/blue]")
+        
+        for package in to_install:
+            if not self.run_command(['npm', 'install', '-g', package], f"npm install -g {package}"):
+                return False
+        
+        return True
+    
     def setup_direnv(self) -> bool:
         """Setup direnv configuration."""
         if not self.check_command_exists('direnv'):
@@ -165,6 +207,10 @@ class BootstrapOrchestrator:
         
         # Install pipx packages
         if not self.install_pipx_packages():
+            success = False
+        
+        # Install npm packages
+        if not self.install_npm_packages():
             success = False
         
         # Setup direnv
