@@ -12,6 +12,7 @@ packages:
   - fzf
   - ripgrep
   - bat
+  - yq
   
   # Version management
   - git
