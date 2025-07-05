@@ -25,6 +25,7 @@ packages:
   - httpie
   - yq
   - jc
+  - typer
   
   # Optional tools
   # - awscli
