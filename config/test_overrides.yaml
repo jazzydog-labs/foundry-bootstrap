@@ -1,0 +1,13 @@
+# Test configuration overrides for foundry-bootstrap
+# This file specifies special handling for tools that have different command names
+# or version flags than their package names
+
+# Command name mappings (package_name: actual_command)
+command_mappings:
+  ripgrep: rg
+  neovim: nvim
+
+# Version flag overrides (command: version_flag)
+version_flags:
+  tmux: -V
+  isort: --version-number
