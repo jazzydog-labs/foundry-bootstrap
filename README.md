@@ -10,7 +10,7 @@ cd foundry-bootstrap
 ./bootstrap.sh
 ```
 
-The script installs the required package manager (Homebrew on macOS or apt on Linux), pyenv, Python and pipx. It then delegates to `orchestrate/main.py` to install everything defined in the YAML files. Packages missing from the apt repositories are skipped with a warning and appended to `TODO.md` for later review. At the end `test_setup.py` verifies the tools are available.
+The script installs the required package manager (Homebrew on macOS or apt on Linux), pyenv, Python and pipx. It then delegates to `orchestrate/main.py` to install everything defined in the YAML files. If an apt package is unavailable the orchestrator now tries a small fallback installer (for example a curl script) and still records the item in `TODO.md`. At the end `test_setup.py` verifies the tools are available.
 
 ## Configuration
 

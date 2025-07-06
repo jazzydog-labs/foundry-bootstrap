@@ -82,7 +82,34 @@ class BootstrapOrchestrator:
                         f.write(line)
         except Exception as e:
             self.console.print(f"[red]Failed to write to {todo_path}: {e}[/red]")
-    
+
+    APT_FALLBACKS: Dict[str, List[str]] = {
+        "direnv": [
+            "bash",
+            "-c",
+            "curl -sfL https://direnv.net/install.sh | bash",
+        ],
+        "just": [
+            "bash",
+            "-c",
+            "curl -fsSL https://just.systems/install.sh | bash -s -- --to /usr/local/bin",
+        ],
+        "gh": [
+            "bash",
+            "-c",
+            "type -p curl >/dev/null && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo 'deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main' | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && apt-get update && apt-get install -y gh",
+        ],
+    }
+
+    def install_fallback(self, package: str) -> bool:
+        """Attempt to install a package using a fallback command."""
+        cmd = self.APT_FALLBACKS.get(package)
+        if not cmd:
+            self.console.print(
+                f"[yellow]No fallback installer for {package}. Package remains missing.[/yellow]"
+            )
+            return True
+        return self.run_command(cmd, f"fallback install {package}")
     def install_system_packages(self) -> bool:
         """Install system packages using brew on macOS or apt on Linux."""
         config = self.load_config('packages.yaml')
@@ -152,21 +179,30 @@ class BootstrapOrchestrator:
                 return False
 
             valid_packages: List[str] = []
+            missing_packages: List[str] = []
             for package in packages:
                 if self.apt_package_exists(package):
                     valid_packages.append(package)
                 else:
-                    self.console.print(f"[yellow]⚠️  apt package not found: {package}. Skipping.[/yellow]")
+                    self.console.print(
+                        f"[yellow]⚠️  apt package not found: {package}. Attempting fallback.[/yellow]"
+                    )
                     self.record_missing_package(package)
+                    missing_packages.append(package)
 
-            if not valid_packages:
+            if valid_packages:
+                self.console.print(f"[blue]Installing {len(valid_packages)} apt packages...[/blue]")
+                install_cmd = ['apt-get', 'install', '-y'] + valid_packages
+                if not self.run_command(install_cmd, 'apt-get install'):
+                    return False
+
+            for pkg in missing_packages:
+                if not self.install_fallback(pkg):
+                    return False
+
+            if not valid_packages and not missing_packages:
                 self.console.print("[yellow]No valid apt packages to install[/yellow]")
                 return True
-
-            self.console.print(f"[blue]Installing {len(valid_packages)} apt packages...[/blue]")
-            install_cmd = ['apt-get', 'install', '-y'] + valid_packages
-            if not self.run_command(install_cmd, 'apt-get install'):
-                return False
 
         return True
     
