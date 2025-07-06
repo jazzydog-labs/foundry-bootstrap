@@ -13,6 +13,7 @@ packages:
   - ripgrep
   - bat
   - yq
+  - jc
   
   # Version management
   - git

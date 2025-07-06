@@ -4,3 +4,4 @@ click>=8.0
 rich>=13.0
 fuzzywuzzy>=0.18.0
 python-Levenshtein>=0.21.0 
+GitPython>=3.1.34
