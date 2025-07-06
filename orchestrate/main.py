@@ -36,15 +36,16 @@ class BootstrapOrchestrator:
         with open(config_path, 'r') as f:
             return yaml.load(f)
     
-    def run_command(self, cmd: List[str], description: str) -> bool:
+    def run_command(self, cmd: List[str], description: str, env: Dict[str, str] | None = None) -> bool:
         """Run a command and return success status."""
         try:
             self.console.print(f"[blue]Running: {description}[/blue]")
-            result = subprocess.run(
-                cmd, 
-                capture_output=True, 
-                text=True, 
-                check=True
+            subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                env=env
             )
             self.console.print(f"[green]✅ {description} completed[/green]")
             return True
@@ -60,40 +61,79 @@ class BootstrapOrchestrator:
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
     
-    def install_brew_packages(self) -> bool:
-        """Install Homebrew packages from config."""
-        config = self.load_config('brew.yaml')
-        packages = config.get('packages', [])
-        
+    def install_system_packages(self) -> bool:
+        """Install system packages using brew on macOS or apt on Linux."""
+        config = self.load_config('packages.yaml')
+        package_entries = config.get('packages', [])
+
+        if not package_entries:
+            self.console.print("[yellow]No system packages configured[/yellow]")
+            return True
+
+        os_name = sys.platform
+        if os_name.startswith('darwin'):
+            manager = 'brew'
+        else:
+            manager = 'apt'
+
+        packages: List[str] = []
+        for item in package_entries:
+            name = None
+            override = None
+            if isinstance(item, str):
+                name = item
+            elif isinstance(item, dict):
+                if 'name' in item:
+                    name = item.get('name')
+                    override = item.get('apt-override')
+                elif len(item) == 1:
+                    name, meta = next(iter(item.items()))
+                    if isinstance(meta, dict):
+                        override = meta.get('apt-override')
+            if not name:
+                continue
+            packages.append(override if manager == 'apt' and override else name)
+
         if not packages:
-            self.console.print("[yellow]No Homebrew packages configured[/yellow]")
+            self.console.print(f"[yellow]No packages defined for {manager}[/yellow]")
             return True
-        
-        # Check if brew is available
-        if not self.check_command_exists('brew'):
-            self.console.print("[red]Homebrew not found. Please install it first.[/red]")
-            return False
-        
-        # Get list of already installed packages
-        try:
-            result = subprocess.run(['brew', 'list'], capture_output=True, text=True, check=True)
-            installed = result.stdout.split()
-        except subprocess.CalledProcessError:
-            installed = []
-        
-        # Install missing packages
-        to_install = [pkg for pkg in packages if pkg not in installed]
-        
-        if not to_install:
-            self.console.print("[green]All Homebrew packages already installed[/green]")
-            return True
-        
-        self.console.print(f"[blue]Installing {len(to_install)} Homebrew packages...[/blue]")
-        
-        for package in to_install:
-            if not self.run_command(['brew', 'install', package], f"brew install {package}"):
+
+        if manager == 'brew':
+            if not self.check_command_exists('brew'):
+                self.console.print("[red]Homebrew not found. Please install it first.[/red]")
                 return False
-        
+
+            try:
+                result = subprocess.run(['brew', 'list'], capture_output=True, text=True, check=True)
+                installed = result.stdout.split()
+            except subprocess.CalledProcessError:
+                installed = []
+
+            to_install = [pkg for pkg in packages if pkg not in installed]
+
+            if not to_install:
+                self.console.print("[green]All Homebrew packages already installed[/green]")
+                return True
+
+            self.console.print(f"[blue]Installing {len(to_install)} Homebrew packages...[/blue]")
+            for package in to_install:
+                if not self.run_command(['brew', 'install', package], f"brew install {package}"):
+                    return False
+
+        else:  # apt
+            if not self.check_command_exists('apt-get'):
+                self.console.print("[red]apt-get not found. Cannot install packages[/red]")
+                return False
+
+            self.console.print("[blue]Updating apt package list...[/blue]")
+            if not self.run_command(['apt-get', 'update'], 'apt-get update'):
+                return False
+
+            self.console.print(f"[blue]Installing {len(packages)} apt packages...[/blue]")
+            install_cmd = ['apt-get', 'install', '-y'] + packages
+            if not self.run_command(install_cmd, 'apt-get install'):
+                return False
+
         return True
     
     def install_pipx_packages(self) -> bool:
@@ -168,8 +208,13 @@ class BootstrapOrchestrator:
         
         self.console.print(f"[blue]Installing {len(to_install)} npm packages...[/blue]")
         
+        env = os.environ.copy()
+        # Some npm packages (like mermaid-cli) download large browsers via puppeteer.
+        # Skip those downloads in restricted environments.
+        env.setdefault('PUPPETEER_SKIP_DOWNLOAD', '1')
+
         for package in to_install:
-            if not self.run_command(['npm', 'install', '-g', package], f"npm install -g {package}"):
+            if not self.run_command(['npm', 'install', '-g', package], f"npm install -g {package}", env=env):
                 return False
         
         return True
@@ -201,8 +246,8 @@ class BootstrapOrchestrator:
         
         success = True
         
-        # Install Homebrew packages
-        if not self.install_brew_packages():
+        # Install system packages
+        if not self.install_system_packages():
             success = False
         
         # Install pipx packages

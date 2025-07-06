@@ -10,11 +10,11 @@ cd foundry-bootstrap
 ./bootstrap.sh
 ```
 
-The script installs Homebrew, pyenv, Python and pipx, then delegates to `orchestrate/main.py` to install everything defined in the YAML files. At the end `test_setup.py` verifies the tools are available.
+The script installs the required package manager (Homebrew on macOS or apt on Linux), pyenv, Python and pipx. It then delegates to `orchestrate/main.py` to install everything defined in the YAML files. At the end `test_setup.py` verifies the tools are available.
 
 ## Configuration
 
-- `config/brew.yaml` – Homebrew packages
+- `config/packages.yaml` – system packages with optional apt overrides
 - `config/pipx.yaml` – Python CLI tools
 - `config/npm.yaml`  – global npm packages
 - `config/pyenv_version.txt` – Python version for pyenv

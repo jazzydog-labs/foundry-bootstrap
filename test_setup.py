@@ -11,6 +11,7 @@ import yaml
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
+import platform
 
 console = Console()
 
@@ -66,6 +67,38 @@ def load_requirements_file(filepath: Path) -> list:
         console.print(f"[red]❌ Error reading {filepath}: {e}[/red]")
         return []
 
+def load_system_packages(filepath: Path, manager: str) -> list:
+    """Load system packages for the given package manager."""
+    if not filepath.exists():
+        console.print(f"[yellow]⚠️  {filepath} not found[/yellow]")
+        return []
+
+    try:
+        with open(filepath, 'r') as f:
+            data = yaml.safe_load(f) or {}
+            packages = []
+            entries = data.get('packages') or []
+            for item in entries:
+                name = None
+                override = None
+                if isinstance(item, str):
+                    name = item
+                elif isinstance(item, dict):
+                    if 'name' in item:
+                        name = item.get('name')
+                        override = item.get('apt-override')
+                    elif len(item) == 1:
+                        name, meta = next(iter(item.items()))
+                        if isinstance(meta, dict):
+                            override = meta.get('apt-override')
+                if not name:
+                    continue
+                packages.append(override if manager == 'apt' and override else name)
+            return packages
+    except Exception as e:
+        console.print(f"[red]❌ Error reading {filepath}: {e}[/red]")
+        return []
+
 def get_command_and_version(package: str, overrides: dict) -> tuple:
     """Get the actual command name and version flag for a package."""
     command_mappings = overrides.get('command_mappings', {})
@@ -89,35 +122,47 @@ def main():
     # Load test overrides
     overrides = load_test_overrides(config_dir)
     
+    os_name = platform.system().lower()
+    manager = 'brew' if os_name == 'darwin' else 'apt'
+
     # Load tools from configuration files
-    brew_packages = load_requirements_file(config_dir / "brew.yaml")
+    system_packages = load_system_packages(config_dir / "packages.yaml", manager)
     pipx_packages = load_requirements_file(config_dir / "pipx.yaml")
     python_packages = load_requirements_file(script_dir / "requirements.txt")
+
+    console.print(f"[dim]Loaded {len(system_packages)} system packages, {len(pipx_packages)} pipx packages, {len(python_packages)} Python packages[/dim]\n")
     
-    console.print(f"[dim]Loaded {len(brew_packages)} Homebrew packages, {len(pipx_packages)} pipx packages, {len(python_packages)} Python packages[/dim]\n")
-    
-    # Special cases: brew and pyenv are always required
-    special_tools = [
-        ('brew', 'Homebrew'),
-        ('pyenv', 'pyenv'),
-        ('python3', 'Python 3'),
-        ('pip3', 'pip3'),
-        ('pipx', 'pipx'),
-    ]
+    # Special cases: core tools always required
+    if manager == 'brew':
+        special_tools = [
+            ('brew', 'Homebrew'),
+            ('pyenv', 'pyenv'),
+            ('python3', 'Python 3'),
+            ('pip3', 'pip3'),
+            ('pipx', 'pipx'),
+        ]
+    else:
+        special_tools = [
+            ('apt-get', 'apt-get'),
+            ('pyenv', 'pyenv'),
+            ('python3', 'Python 3'),
+            ('pip3', 'pip3'),
+            ('pipx', 'pipx'),
+        ]
     
     # Test special tools first
     console.print("[bold]Core Tools (Special):[/bold]")
     special_success = all(check_command(cmd, name) for cmd, name in special_tools)
     console.print()
     
-    # Test Homebrew packages
-    console.print("[bold]Homebrew Packages:[/bold]")
-    brew_results = []
-    for package in brew_packages:
+    # Test system packages
+    console.print("[bold]System Packages:[/bold]")
+    system_results = []
+    for package in system_packages:
         actual_command, version_flag = get_command_and_version(package, overrides)
         display_name = f"{package} ({actual_command})" if actual_command != package else package
-        brew_results.append(check_command(actual_command, display_name, version_flag))
-    brew_success = all(brew_results)
+        system_results.append(check_command(actual_command, display_name, version_flag))
+    system_success = all(system_results)
     console.print()
     
     # Test pipx packages
@@ -148,10 +193,10 @@ def main():
     console.print()
     
     # Summary
-    total_tools = len(special_tools) + len(brew_packages) + len(pipx_packages) + len(python_packages)
+    total_tools = len(special_tools) + len(system_packages) + len(pipx_packages) + len(python_packages)
     successful_tools = sum([
         special_success * len(special_tools),
-        brew_success * len(brew_packages),
+        system_success * len(system_packages),
         pipx_success * len(pipx_packages),
         python_success * len(python_packages)
     ])
