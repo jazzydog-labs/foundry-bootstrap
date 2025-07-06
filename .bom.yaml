@@ -1,0 +1,11 @@
+name: foundry-bootstrap
+description: Canonical bootstrapper for the foundry ecosystem - sets up global tooling and environment configuration
+type: bootstrap
+remotes:
+  origin: https://github.com/jazzydog-labs/foundry-bootstrap.git
+integration_quality:
+  documentation_completeness: excellent
+  bom_integration: complete
+  context_file_coverage: comprehensive
+  last_updated: "2025-01-27"
+  notes: "Well-documented with comprehensive configuration and orchestration files" 
