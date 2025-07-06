@@ -30,6 +30,27 @@ if [[ -n "$current_name" ]]; then
 fi
 PACKAGES_STR="${PACKAGES[*]}"
 
+VALID_PACKAGES=()
+for pkg in "${PACKAGES[@]}"; do
+    if apt-cache show "$pkg" >/dev/null 2>&1; then
+        VALID_PACKAGES+=("$pkg")
+    else
+        echo "⚠️  apt package not found: $pkg. Skipping." >&2
+        TODO_FILE="$(dirname "$SCRIPT_DIR")/TODO.md"
+        TODO_LINE="- [ ] Add apt installation method for $pkg"
+        if [[ -f "$TODO_FILE" ]] && ! grep -Fxq "$TODO_LINE" "$TODO_FILE"; then
+            echo "$TODO_LINE" >> "$TODO_FILE"
+        fi
+    fi
+done
+
+if [[ ${#VALID_PACKAGES[@]} -eq 0 ]]; then
+    echo "No valid apt packages to install"
+    exit 0
+fi
+
+PACKAGES_STR="${VALID_PACKAGES[*]}"
+
 echo "📦 Installing apt packages: $PACKAGES_STR"
 apt-get update
 apt-get install -y $PACKAGES_STR

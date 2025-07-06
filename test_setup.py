@@ -7,10 +7,9 @@ This script checks that all required tools are properly installed and accessible
 
 import subprocess
 import sys
-import yaml
+import yaml  # type: ignore
 from pathlib import Path
 from rich.console import Console
-from rich.table import Table
 import platform
 
 console = Console()

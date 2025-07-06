@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import List, Dict, Any
 import click
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 console = Console()
 
@@ -60,6 +59,29 @@ class BootstrapOrchestrator:
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
+
+    def apt_package_exists(self, package: str) -> bool:
+        """Return True if an apt package is available."""
+        try:
+            result = subprocess.run(
+                ['apt-cache', 'show', package], capture_output=True, text=True, check=True
+            )
+            return 'No packages found' not in result.stdout
+        except subprocess.CalledProcessError:
+            return False
+
+    def record_missing_package(self, package: str) -> None:
+        """Append a TODO entry for a missing apt package."""
+        todo_path = Path(__file__).resolve().parent.parent / 'TODO.md'
+        line = f"- [ ] Add apt installation method for {package}\n"
+        try:
+            if todo_path.exists():
+                with open(todo_path, 'r+') as f:
+                    contents = f.read()
+                    if line.strip() not in contents:
+                        f.write(line)
+        except Exception as e:
+            self.console.print(f"[red]Failed to write to {todo_path}: {e}[/red]")
     
     def install_system_packages(self) -> bool:
         """Install system packages using brew on macOS or apt on Linux."""
@@ -129,8 +151,20 @@ class BootstrapOrchestrator:
             if not self.run_command(['apt-get', 'update'], 'apt-get update'):
                 return False
 
-            self.console.print(f"[blue]Installing {len(packages)} apt packages...[/blue]")
-            install_cmd = ['apt-get', 'install', '-y'] + packages
+            valid_packages: List[str] = []
+            for package in packages:
+                if self.apt_package_exists(package):
+                    valid_packages.append(package)
+                else:
+                    self.console.print(f"[yellow]⚠️  apt package not found: {package}. Skipping.[/yellow]")
+                    self.record_missing_package(package)
+
+            if not valid_packages:
+                self.console.print("[yellow]No valid apt packages to install[/yellow]")
+                return True
+
+            self.console.print(f"[blue]Installing {len(valid_packages)} apt packages...[/blue]")
+            install_cmd = ['apt-get', 'install', '-y'] + valid_packages
             if not self.run_command(install_cmd, 'apt-get install'):
                 return False
 
