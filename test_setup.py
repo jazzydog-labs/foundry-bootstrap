@@ -99,13 +99,18 @@ def load_system_packages(filepath: Path, manager: str) -> list:
         console.print(f"[red]❌ Error reading {filepath}: {e}[/red]")
         return []
 
-def get_command_and_version(package: str, overrides: dict) -> tuple:
+def get_command_and_version(package: str, overrides: dict, is_linux: bool = False) -> tuple:
     """Get the actual command name and version flag for a package."""
     command_mappings = overrides.get('command_mappings', {})
+    linux_command_mappings = overrides.get('linux_command_mappings', {})
     version_flags = overrides.get('version_flags', {})
     
     # Get the actual command name
-    actual_command = command_mappings.get(package, package)
+    # Check Linux-specific mappings first if on Linux
+    if is_linux and package in linux_command_mappings:
+        actual_command = linux_command_mappings[package]
+    else:
+        actual_command = command_mappings.get(package, package)
     
     # Get the version flag
     version_flag = version_flags.get(package, '--version')
@@ -124,6 +129,7 @@ def main():
     
     os_name = platform.system().lower()
     manager = 'brew' if os_name == 'darwin' else 'apt'
+    is_linux = os_name == 'linux'
 
     # Load tools from configuration files
     system_packages = load_system_packages(config_dir / "packages.yaml", manager)
@@ -159,7 +165,7 @@ def main():
     console.print("[bold]System Packages:[/bold]")
     system_results = []
     for package in system_packages:
-        actual_command, version_flag = get_command_and_version(package, overrides)
+        actual_command, version_flag = get_command_and_version(package, overrides, is_linux)
         display_name = f"{package} ({actual_command})" if actual_command != package else package
         system_results.append(check_command(actual_command, display_name, version_flag))
     system_success = all(system_results)
@@ -169,7 +175,7 @@ def main():
     console.print("[bold]pipx Packages:[/bold]")
     pipx_results = []
     for package in pipx_packages:
-        actual_command, version_flag = get_command_and_version(package, overrides)
+        actual_command, version_flag = get_command_and_version(package, overrides, is_linux)
         display_name = f"{package} ({actual_command})" if actual_command != package else package
         pipx_results.append(check_command(actual_command, display_name, version_flag))
     pipx_success = all(pipx_results)
@@ -180,7 +186,7 @@ def main():
     python_results = []
     for package in python_packages:
         # Use command mapping for Python packages too
-        actual_import_name, _ = get_command_and_version(package, overrides)
+        actual_import_name, _ = get_command_and_version(package, overrides, is_linux)
         try:
             __import__(actual_import_name)
             display_name = f"{package} ({actual_import_name})" if actual_import_name != package else package

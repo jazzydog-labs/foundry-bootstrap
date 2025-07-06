@@ -8,6 +8,9 @@ command_mappings:
   neovim: nvim
   python-Levenshtein: Levenshtein
   GitPython: git
+
+# Linux-specific command mappings (only applied on Linux systems)
+linux_command_mappings:
   bat: batcat
 
 # Version flag overrides (command: version_flag)
