@@ -40,6 +40,13 @@ After bootstrapping you can rerun the verification script at any time:
 python3 test_setup.py
 ```
 
+To confirm that all system packages are available in the Ubuntu repositories
+without running the full bootstrap, execute:
+
+```bash
+scripts/verify_apt_packages.py
+```
+
 ## Container info
 
 The development container for this repo uses Ubuntu 24.04.2 LTS.
