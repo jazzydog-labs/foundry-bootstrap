@@ -24,7 +24,6 @@ packages:
   - htop
   - tmux
   - neovim  # Modern vim editor with better defaults
-  - just
   
   # Container tools (optional)
   # - docker
