@@ -1,0 +1,18 @@
+packages:
+  - name: direnv
+  - name: just
+  - name: gh
+  - name: jq
+  - name: fzf
+  - name: ripgrep
+  - name: bat
+  - name: yq
+  - name: jc
+  - name: git
+  - name: git-lfs
+  - name: tree
+  - name: htop
+  - name: tmux
+  - name: neovim
+  - name: node
+    apt-override: nodejs

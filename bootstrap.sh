@@ -8,23 +8,40 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$SCRIPT_DIR/install"
 ORCHESTRATE_DIR="$SCRIPT_DIR/orchestrate"
 
+OS_NAME="$(uname -s)"
+if [[ "$OS_NAME" == "Darwin" ]]; then
+    PLATFORM="macos"
+else
+    PLATFORM="linux"
+fi
+echo "🔍 Detected platform: $PLATFORM"
+
 echo "🔧 foundry-bootstrap: Starting bootstrap process..."
 
 # Install core dependencies via bash scripts
 echo "📦 Installing core dependencies..."
 
-# Install Homebrew if missing
-if ! command -v brew &> /dev/null; then
-    echo "🍺 Installing Homebrew..."
-    bash "$INSTALL_DIR/install_brew.sh"
+# Install package manager dependencies
+if [[ "$PLATFORM" == "macos" ]]; then
+    if ! command -v brew &> /dev/null; then
+        echo "🍺 Installing Homebrew..."
+        bash "$INSTALL_DIR/install_brew.sh"
+    else
+        echo "✅ Homebrew already installed"
+    fi
 else
-    echo "✅ Homebrew already installed"
+    echo "📦 Installing apt packages..."
+    bash "$INSTALL_DIR/install_apt.sh"
 fi
 
 # Install pyenv if missing
 if ! command -v pyenv &> /dev/null; then
     echo "🐍 Installing pyenv..."
-    bash "$INSTALL_DIR/install_pyenv.sh"
+    if [[ "$PLATFORM" == "macos" ]]; then
+        bash "$INSTALL_DIR/install_pyenv.sh"
+    else
+        bash "$INSTALL_DIR/install_pyenv_linux.sh"
+    fi
 else
     echo "✅ pyenv already installed"
 fi
