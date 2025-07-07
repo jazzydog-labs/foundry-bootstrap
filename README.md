@@ -12,6 +12,11 @@ cd foundry-bootstrap
 
 The script installs the required package manager (Homebrew on macOS or apt on Linux), pyenv, Python and pipx. It then delegates to `orchestrate/main.py` to install everything defined in the YAML files. If an apt package is unavailable the orchestrator now tries a small fallback installer (for example a curl script) and still records the item in `TODO.md`. At the end `test_setup.py` verifies the tools are available.
 
+When running on Linux the bootstrapper installs the build dependencies needed by
+pyenv. Set the environment variable `PYENV_ARCHIVE` to the path of a tarball
+containing a cloned `pyenv` repository to perform the installation without
+network access. Use `PYENV_SKIP_DEPS=1` to skip the dependency step if required.
+
 ## Configuration
 
 - `config/packages.yaml` – system packages with optional apt overrides
